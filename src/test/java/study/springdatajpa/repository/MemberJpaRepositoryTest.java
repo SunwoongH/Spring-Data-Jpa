@@ -69,6 +69,63 @@ class MemberJpaRepositoryTest {
         assertThat(members.size()).isEqualTo(memberCount);
     }
 
+    @DisplayName("특정 이름을 가지고 특정 나이보다 많은 회원들을 조회한다.")
+    @Test
+    void findByUsernameAndAgeGreaterThanTest() {
+        // given
+        final int maxAge = 25;
+        Member memberA = createMember("memberA", 20, null);
+        Member memberB = createMember("memberB", 25, null);
+        memberJpaRepository.save(memberA);
+        memberJpaRepository.save(memberB);
+
+        // when
+        List<Member> members = memberJpaRepository.findByUsernameAndAgeGreaterThan("memberA", maxAge);
+
+        // then
+        assertThat(members.size()).isEqualTo(0);
+    }
+
+    @DisplayName("특정 이름을 가진 회원들을 조회한다.")
+    @Test
+    void findByUsernameByNamedQueryTest() {
+        // given
+        final String username = "joy";
+        Member memberA = createMember("joy", 25, null);
+        Member memberB = createMember("joy", 25, null);
+        memberJpaRepository.save(memberA);
+        memberJpaRepository.save(memberB);
+
+        // when
+        List<Member> members = memberJpaRepository.findByUsername(username);
+
+        // then
+        assertThat(members.size()).isEqualTo(2);
+        assertThat(members).contains(memberA, memberB);
+    }
+
+    @DisplayName("특정 나이인 회원들을 페이징 조회한다.")
+    @Test
+    void findByPageTest() {
+        // given
+        final int age = 25;
+        final int count = 5;
+        for (int i = 0; i < count; i++) {
+            Member member = createMember(String.valueOf(i), age, null);
+            memberJpaRepository.save(member);
+        }
+
+        // when
+        final int offset = 0;
+        final int limit = 3;
+        List<Member> members = memberJpaRepository.findByPage(age, offset, limit);
+        long totalCount = memberJpaRepository.totalCount(age);
+
+        // then
+        assertThat(members.size()).isEqualTo(limit);
+        assertThat(totalCount).isEqualTo(count);
+    }
+
     private Member createMember(String username, int age, Team team) {
         return Member.builder()
                 .username(username)
