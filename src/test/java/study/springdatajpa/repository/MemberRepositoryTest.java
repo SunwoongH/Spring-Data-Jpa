@@ -4,6 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import study.springdatajpa.dto.MemberDto;
 import study.springdatajpa.entity.Member;
@@ -202,6 +205,33 @@ class MemberRepositoryTest {
         assertThat(members).isInstanceOf(List.class);
         assertThat(findMember).isInstanceOf(Member.class);
         assertThat(findOptionalMember).isInstanceOf(Optional.class);
+    }
+
+    @DisplayName("특정 나이인 회원들을 페이징 조회한다.")
+    @Test
+    void findByPageTest() {
+        // given
+        final int age = 25;
+        final long count = 7;
+        for (int i = 0; i < count; i++) {
+            Member member = createMember(String.valueOf(i), age, null);
+            memberRepository.save(member);
+        }
+
+        // when
+        final int offset = 0;
+        final int limit = 3;
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "username"));
+        Page<Member> memberPage = memberRepository.findByAge(age, pageRequest);
+        List<Member> members = memberPage.getContent();
+
+        // then
+        assertThat(members.size()).isEqualTo(limit);
+        assertThat(memberPage.getTotalElements()).isEqualTo(count);
+        assertThat(memberPage.getNumber()).isEqualTo(0);
+        assertThat(memberPage.getTotalPages()).isEqualTo((count % limit) == 0 ? count / limit : (count / limit + 1));
+        assertThat(memberPage.isFirst()).isTrue();
+        assertThat(memberPage.hasNext()).isEqualTo((count != limit) ? true : false);
     }
 
     private Team createTeam(String name) {
