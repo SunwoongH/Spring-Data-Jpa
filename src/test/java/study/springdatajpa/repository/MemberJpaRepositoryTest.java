@@ -126,6 +126,24 @@ class MemberJpaRepositoryTest {
         assertThat(totalCount).isEqualTo(count);
     }
 
+    @DisplayName("특정 나이 이상인 모든 회원들의 나이를 현재 나이 + 1 한다.")
+    @Test
+    void bulkUpdateTest() {
+        // given
+        final int age = 25;
+        final int count = 5;
+        for (int i = 0; i < count; i++) {
+            Member member = createMember(String.valueOf(i), age + i, null);
+            memberJpaRepository.save(member);
+        }
+
+        // when
+        int resultCount = memberJpaRepository.bulkAgePlus(25);
+
+        // then
+        assertThat(resultCount).isEqualTo(count);
+    }
+
     private Member createMember(String username, int age, Team team) {
         return Member.builder()
                 .username(username)
