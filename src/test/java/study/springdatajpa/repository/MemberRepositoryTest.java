@@ -12,6 +12,8 @@ import study.springdatajpa.dto.MemberDto;
 import study.springdatajpa.entity.Member;
 import study.springdatajpa.entity.Team;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +27,8 @@ class MemberRepositoryTest {
     MemberRepository memberRepository;
     @Autowired
     TeamRepository teamRepository;
+    @PersistenceContext
+    EntityManager entityManager;
 
     @DisplayName("회원을 저장한다.")
     @Test
@@ -232,6 +236,75 @@ class MemberRepositoryTest {
         assertThat(memberPage.getTotalPages()).isEqualTo((count % limit) == 0 ? count / limit : (count / limit + 1));
         assertThat(memberPage.isFirst()).isTrue();
         assertThat(memberPage.hasNext()).isEqualTo((count != limit) ? true : false);
+    }
+
+    @DisplayName("특정 나이 이상인 모든 회원들의 나이를 현재 나이 + 1 한다.")
+    @Test
+    void bulkUpdateTest() {
+        // given
+        final int age = 25;
+        final int count = 5;
+        for (int i = 0; i < count; i++) {
+            Member member = createMember(String.valueOf(0), age + i, null);
+            memberRepository.save(member);
+        }
+
+        // when
+        int resultCount = memberRepository.bulkAgePlus(25);
+
+        // then
+        assertThat(resultCount).isEqualTo(count);
+    }
+
+    @DisplayName("회원을 조회할 때 팀도 같이 조회한다.")
+    @Test
+    void findMembersWithTeam() {
+        // give
+        Team teamA = createTeam("teamA");
+        Team teamB = createTeam("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member memberA = createMember("memberA", 25, teamA);
+        Member memberB = createMember("memberB", 25, teamB);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        List<Member> members = memberRepository.findMembersWithTeam();
+        for (Member member : members) {
+            System.out.println("member = " + member);
+            System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+        }
+    }
+
+    @DisplayName("쿼리 힌트가 적용된다.")
+    @Test
+    void queryHintTest() {
+        // given
+        Member member = createMember("joy", 25, null);
+        memberRepository.save(member);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Member findMember = memberRepository.findReadOnlyByUsername("joy");
+        findMember.setUsername("joy2");
+        entityManager.flush();
+    }
+
+    @DisplayName("락이 적용된다.")
+    @Test
+    void lockTest() {
+        // given
+        Member member = createMember("joy", 25, null);
+        memberRepository.save(member);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Member findMember = memberRepository.findLockByUsername("joy");
     }
 
     private Team createTeam(String name) {
