@@ -307,6 +307,28 @@ class MemberRepositoryTest {
         Member findMember = memberRepository.findLockByUsername("joy");
     }
 
+    @DisplayName("생성일 & 생성자 & 수정일 & 수정자를 확인한다.")
+    @Test
+    void eventBaseEntityTest() throws InterruptedException {
+        // given
+        Member member = createMember("memberA", 25, null);
+        memberRepository.save(member);
+        Thread.sleep(100);
+        member.setUsername("memberB");
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Member findMember = memberRepository.findById(member.getId())
+                .orElseThrow(() -> new IllegalArgumentException("id: " + member.getId() + " 회원은 존재하지 않습니다."));
+
+        // then
+        System.out.println("findMember.getCreateDate() = " + findMember.getCreateDate());
+        System.out.println("findMember.getLastModifiedDate() = " + findMember.getLastModifiedDate());
+        System.out.println("findMember.getCreateBy() = " + findMember.getCreateBy());
+        System.out.println("findMember.getLastModifiedBy() = " + findMember.getLastModifiedBy());
+    }
+
     private Team createTeam(String name) {
         return Team.builder()
                 .name(name)
